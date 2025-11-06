@@ -14,6 +14,7 @@ import { CategoryController } from "./infra/http/controllers/CategoryController.
 import {
   registerCategoryRoutes,
   registerDepartmentRoutes,
+  registerVendorRoutes,
 } from "./infra/http/routes.js";
 import { PrismaDepartmentRepository } from "./infra/persistence/PrismaDepartmentRepository.js";
 import { PrismaDepartmentQueryRepository } from "./infra/persistence/PrismaDepartmentQueryRepository.js";
@@ -26,6 +27,17 @@ import { DeactivateDepartmentCommandHandler } from "./application/commands/deact
 import { GetDepartmentByIdQueryHandler } from "./application/queries/get-department-by-id/handler.js";
 import { GetAllDepartmentsQueryHandler } from "./application/queries/get-all-departments/handler.js";
 import { DepartmentController } from "./infra/http/controllers/DepartmentController.js";
+import { PrismaVendorRepository } from "./infra/persistence/PrismaVendorRepository.js";
+import { PrismaVendorQueryRepository } from "./infra/persistence/PrismaVendorQueryRepository.js";
+import { VendorDomainService } from "./application/services/VendorDomainService.js";
+import { CreateVendorCommandHandler } from "./application/commands/create-vendor/handler.js";
+import { UpdateVendorCommandHandler } from "./application/commands/update-vendor/handler.js";
+import { DeleteVendorCommandHandler } from "./application/commands/delete-vendor/handler.js";
+import { ActivateVendorCommandHandler } from "./application/commands/activate-vendor/handler.js";
+import { DeactivateVendorCommandHandler } from "./application/commands/deactivate-vendor/handler.js";
+import { GetVendorByIdQueryHandler } from "./application/queries/get-vendor-by-id/handler.js";
+import { GetAllVendorsQueryHandler } from "./application/queries/get-all-vendors/handler.js";
+import { VendorController } from "./infra/http/controllers/VendorController.js";
 
 export async function registerMasterDataModule(
   fastify: FastifyInstance,
@@ -125,4 +137,51 @@ export async function registerMasterDataModule(
   );
 
   await registerDepartmentRoutes(fastify, departmentController);
+
+  // Vendor Module
+  const vendorRepository = new PrismaVendorRepository(prisma);
+  const vendorQueryRepository = new PrismaVendorQueryRepository(prisma);
+
+  const vendorDomainService = new VendorDomainService(vendorRepository);
+
+  const createVendorHandler = new CreateVendorCommandHandler(
+    vendorRepository,
+    vendorDomainService
+  );
+  const updateVendorHandler = new UpdateVendorCommandHandler(
+    vendorRepository,
+    vendorQueryRepository,
+    vendorDomainService
+  );
+  const deleteVendorHandler = new DeleteVendorCommandHandler(
+    vendorRepository,
+    vendorQueryRepository
+  );
+  const activateVendorHandler = new ActivateVendorCommandHandler(
+    vendorRepository,
+    vendorQueryRepository
+  );
+  const deactivateVendorHandler = new DeactivateVendorCommandHandler(
+    vendorRepository,
+    vendorQueryRepository
+  );
+
+  const getVendorByIdHandler = new GetVendorByIdQueryHandler(
+    vendorQueryRepository
+  );
+  const getAllVendorsHandler = new GetAllVendorsQueryHandler(
+    vendorQueryRepository
+  );
+
+  const vendorController = new VendorController(
+    createVendorHandler,
+    updateVendorHandler,
+    deleteVendorHandler,
+    activateVendorHandler,
+    deactivateVendorHandler,
+    getVendorByIdHandler,
+    getAllVendorsHandler
+  );
+
+  await registerVendorRoutes(fastify, vendorController);
 }
