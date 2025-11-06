@@ -11,7 +11,21 @@ import { DeactivateCategoryCommandHandler } from "./application/commands/deactiv
 import { GetCategoryByIdQueryHandler } from "./application/queries/get-category-by-id/handler.js";
 import { GetAllCategoriesQueryHandler } from "./application/queries/get-all-categories/handler.js";
 import { CategoryController } from "./infra/http/controllers/CategoryController.js";
-import { registerCategoryRoutes } from "./infra/http/routes.js";
+import {
+  registerCategoryRoutes,
+  registerDepartmentRoutes,
+} from "./infra/http/routes.js";
+import { PrismaDepartmentRepository } from "./infra/persistence/PrismaDepartmentRepository.js";
+import { PrismaDepartmentQueryRepository } from "./infra/persistence/PrismaDepartmentQueryRepository.js";
+import { DepartmentDomainService } from "./application/services/DepartmentDomainService.js";
+import { CreateDepartmentCommandHandler } from "./application/commands/create-department/handler.js";
+import { UpdateDepartmentCommandHandler } from "./application/commands/update-department/handler.js";
+import { DeleteDepartmentCommandHandler } from "./application/commands/delete-department/handler.js";
+import { ActivateDepartmentCommandHandler } from "./application/commands/activate-department/handler.js";
+import { DeactivateDepartmentCommandHandler } from "./application/commands/deactivate-department/handler.js";
+import { GetDepartmentByIdQueryHandler } from "./application/queries/get-department-by-id/handler.js";
+import { GetAllDepartmentsQueryHandler } from "./application/queries/get-all-departments/handler.js";
+import { DepartmentController } from "./infra/http/controllers/DepartmentController.js";
 
 export async function registerMasterDataModule(
   fastify: FastifyInstance,
@@ -62,4 +76,53 @@ export async function registerMasterDataModule(
   );
 
   await registerCategoryRoutes(fastify, categoryController);
+
+  // Department Module
+  const departmentRepository = new PrismaDepartmentRepository(prisma);
+  const departmentQueryRepository = new PrismaDepartmentQueryRepository(prisma);
+
+  const departmentDomainService = new DepartmentDomainService(
+    departmentRepository
+  );
+
+  const createDepartmentHandler = new CreateDepartmentCommandHandler(
+    departmentRepository,
+    departmentDomainService
+  );
+  const updateDepartmentHandler = new UpdateDepartmentCommandHandler(
+    departmentRepository,
+    departmentQueryRepository,
+    departmentDomainService
+  );
+  const deleteDepartmentHandler = new DeleteDepartmentCommandHandler(
+    departmentRepository,
+    departmentQueryRepository
+  );
+  const activateDepartmentHandler = new ActivateDepartmentCommandHandler(
+    departmentRepository,
+    departmentQueryRepository
+  );
+  const deactivateDepartmentHandler = new DeactivateDepartmentCommandHandler(
+    departmentRepository,
+    departmentQueryRepository
+  );
+
+  const getDepartmentByIdHandler = new GetDepartmentByIdQueryHandler(
+    departmentQueryRepository
+  );
+  const getAllDepartmentsHandler = new GetAllDepartmentsQueryHandler(
+    departmentQueryRepository
+  );
+
+  const departmentController = new DepartmentController(
+    createDepartmentHandler,
+    updateDepartmentHandler,
+    deleteDepartmentHandler,
+    activateDepartmentHandler,
+    deactivateDepartmentHandler,
+    getDepartmentByIdHandler,
+    getAllDepartmentsHandler
+  );
+
+  await registerDepartmentRoutes(fastify, departmentController);
 }
